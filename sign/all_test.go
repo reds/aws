@@ -3,13 +3,13 @@ package sign
 import (
 	"bufio"
 	"bytes"
+	"github.com/reds/aws/config"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 	"testing"
-	"github.com/reds/aws/config"
 )
 
 func TestConfig(t *testing.T) {
@@ -46,12 +46,12 @@ func TestDir(t *testing.T) {
 			if req == nil {
 				t.Fatal("error parsing", file)
 			}
-			t.Log ( file )
+			t.Log(file)
 			creq, _ := req2canonical(req)
-			if !compFile2String ( t, file+".creq", creq ) {
-				t.Fatal ( "cannonical" )
+			if !compFile2String(t, file+".creq", creq) {
+				t.Fatal("cannonical")
 			}
-			SignV4(req, "host", cfg.Region, cfg.AccessKeyId, cfg.Secret )
+			SignV4(req, "host", cfg.Region, cfg.AccessKeyId, cfg.Secret)
 			auth := req.Header["Authorization"][0]
 			if !compFile2String(t, file+".authz", auth) {
 				t.Fatal("authorization", file)
@@ -71,8 +71,8 @@ func compFile2String(t *testing.T, fn, data string) bool {
 		t.Log(err)
 		return false
 	}
-	fsdata := strings.Replace ( strings.Replace ( string(fdata), "\r\n", "", -1 ), "\n", "", -1 )
-	data = strings.Replace ( strings.Replace ( string(data), "\r\n", "", -1 ), "\n", "", -1 )
+	fsdata := strings.Replace(strings.Replace(string(fdata), "\r\n", "", -1), "\n", "", -1)
+	data = strings.Replace(strings.Replace(string(data), "\r\n", "", -1), "\n", "", -1)
 	if len(fsdata) != len(data) {
 		t.Log("lengths differ", len(fsdata), len(data))
 		t.Log(fsdata)
@@ -148,7 +148,7 @@ func reqFile2req(t *testing.T, fn string) *http.Request {
 	default:
 		t.Fatal(req)
 	}
-	request, err := http.NewRequest(rt, "https://aws.amazon.com" + req[1], bytes.NewReader(body))
+	request, err := http.NewRequest(rt, "https://aws.amazon.com"+req[1], bytes.NewReader(body))
 	if err != nil {
 		t.Fatal(req)
 	}
@@ -160,4 +160,3 @@ func reqFile2req(t *testing.T, fn string) *http.Request {
 	}
 	return request
 }
-

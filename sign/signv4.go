@@ -8,10 +8,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"path"
 	"sort"
 	"strings"
 	"time"
-	"path"
 )
 
 func SignV4(req *http.Request, service, region, accesskey, secret string) {
@@ -19,18 +19,18 @@ func SignV4(req *http.Request, service, region, accesskey, secret string) {
 	sha := sha256.New()
 	sha.Write([]byte(creq))
 	chash := sha.Sum(nil)
-	
+
 	t := time.Now().UTC()
 	// for the test suite date has already been set
 	if len(req.Header["Date"]) > 0 {
-		t, _ = time.Parse ( time.RFC1123, req.Header["Date"][0] )
+		t, _ = time.Parse(time.RFC1123, req.Header["Date"][0])
 	}
 	req.Header.Set("x-amz-date", t.Format("20060102T150405Z"))
 	string2sign := "AWS4-HMAC-SHA256\n" + t.Format("20060102T150405Z") + "\n" +
 		t.Format("20060102") + "/" + region + "/" + service + "/aws4_request\n" +
 		fmt.Sprintf("%x", chash)
 	sig := doHmac(doHmac(doHmac(doHmac(("AWS4"+secret), (t.Format("20060102"))), (region)), (service)), ("aws4_request"))
-	
+
 	sig = fmt.Sprintf("%x", doHmac(sig, string2sign))
 	sig = "AWS4-HMAC-SHA256 Credential=" + accesskey + "/" + t.Format("20060102") + "/" + region + "/" + service + "/aws4_request, SignedHeaders=" + signedHeaders + ", Signature=" + sig
 	req.Header.Set("Authorization", sig)
@@ -61,9 +61,9 @@ func req2canonical(req *http.Request) (string, string) {
 	canon := req.Method + "\n"
 
 	//  CanonicalURI + '\n' +
-	p := path.Clean ( req.URL.Path )
+	p := path.Clean(req.URL.Path)
 	// undo some of path.Clean's work
-	if len(p) > 1 && strings.HasSuffix ( req.URL.Path, "/" ) {
+	if len(p) > 1 && strings.HasSuffix(req.URL.Path, "/") {
 		p += "/"
 	}
 	if p == "" {
@@ -72,14 +72,14 @@ func req2canonical(req *http.Request) (string, string) {
 	canon += p + "\n"
 
 	//  CanonicalQueryString + '\n' +
-	queries := make ([]string, 0, 20)
+	queries := make([]string, 0, 20)
 	if len(req.URL.RawQuery) > 0 {
 		for _, q := range strings.Split(req.URL.RawQuery, "&") {
-			kv := strings.SplitN ( q, "=", 2 )
+			kv := strings.SplitN(q, "=", 2)
 			if len(kv) == 2 {
-				queries = append ( queries, kv[0] + "=" + kv[1] )
+				queries = append(queries, kv[0]+"="+kv[1])
 			} else {
-				queries = append ( queries, kv[0] + "=" )
+				queries = append(queries, kv[0]+"=")
 			}
 		}
 	}
