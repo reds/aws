@@ -10,9 +10,14 @@ dynamodb
 A thin veneer over the aws dynamodb service.
 
 DescribeTable
+
 ListTables
+
 GetItem
+
 PutItem
+
+```go
     	cfg, err := config.LoadConfig("/tmp/aws.cfg", "dynamodb")
     	if err != nil {
     		t.Fatal(cfg, err)
@@ -21,5 +26,6 @@ PutItem
     	if err != nil {
     		t.Fatal(err)
     	}
+```
 
 UpdateItem
