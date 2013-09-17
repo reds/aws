@@ -1,4 +1,4 @@
-package signv4
+package sign
 
 import (
 	"bytes"
