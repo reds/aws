@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 func SignV4(req *http.Request, service, region, accesskey, secret string) {
@@ -46,6 +47,7 @@ func doHmac(key, data string) string {
 	return string(h.Sum(nil))
 }
 
+// http://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
 func req2canonical(req *http.Request) (string, string) {
 	/*
 	     CanonicalRequest =
@@ -61,7 +63,8 @@ func req2canonical(req *http.Request) (string, string) {
 	canon := req.Method + "\n"
 
 	//  CanonicalURI + '\n' +
-	p := path.Clean(req.URL.Path)
+	// take care of unicode in path
+	p := unUnicode(path.Clean(req.URL.Path))
 	// undo some of path.Clean's work
 	if len(p) > 1 && strings.HasSuffix(req.URL.Path, "/") {
 		p += "/"
@@ -69,17 +72,19 @@ func req2canonical(req *http.Request) (string, string) {
 	if p == "" {
 		p = "/"
 	}
+	// space is special
+	p = strings.Replace(p, " ", "%20", -1)
 	canon += p + "\n"
 
 	//  CanonicalQueryString + '\n' +
 	queries := make([]string, 0, 20)
 	if len(req.URL.RawQuery) > 0 {
 		for _, q := range strings.Split(req.URL.RawQuery, "&") {
-			kv := strings.SplitN(q, "=", 2)
+			kv := strings.SplitN(strings.Replace(q, "+", "%20", -1), "=", 2)
 			if len(kv) == 2 {
-				queries = append(queries, kv[0]+"="+kv[1])
+				queries = append(queries, unUnicode(kv[0])+"="+unUnicode(kv[1]))
 			} else {
-				queries = append(queries, kv[0]+"=")
+				queries = append(queries, unUnicode(kv[0])+"=")
 			}
 		}
 	}
@@ -122,4 +127,22 @@ func req2canonical(req *http.Request) (string, string) {
 	hash := sha.Sum(nil)
 	canon += fmt.Sprintf("%x", hash)
 	return canon, strings.Join(headerList, ";")
+}
+
+// extended UTF-8 characters must be in the form %XY%ZA%BC
+func unUnicode(in string) string {
+	b := []byte(in)
+	out := ""
+	for len(b) > 0 {
+		_, size := utf8.DecodeRune(b)
+		if size > 1 {
+			for i := 0; i < size; i++ {
+				out += fmt.Sprintf("%%%X", b[i])
+			}
+		} else {
+			out += string(b[0])
+		}
+		b = b[size:]
+	}
+	return out
 }

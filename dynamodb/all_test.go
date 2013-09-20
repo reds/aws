@@ -46,7 +46,7 @@ func TestPutItem(t *testing.T) {
 	if err != nil {
 		t.Fatal(cfg, err)
 	}
-	tr, err := PutItem(cfg, &PutItemRequest{TableName: "mprtest", Item: map[string]AttributeValue{"id": {S: "dyntest"}, "favs": {SS: []string{"f1", "f2", "f4"}}, "ts":{N: "90"}}})
+	tr, err := PutItem(cfg, &PutItemRequest{TableName: "mprtest", Item: map[string]AttributeValue{"id": {S: "dyntest"}, "favs": {SS: []string{"f1", "f2", "f4"}}, "ts": {N: "90"}}})
 	if err != nil {
 		t.Fatal(err)
 	}
