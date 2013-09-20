@@ -1,6 +1,6 @@
 package config
 
-/* 
+/*
 
  Load an aws config file. The file is json and has the following format:
 

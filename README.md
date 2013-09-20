@@ -4,6 +4,11 @@ aws
 Amazon Web Services tools
 
 
+Signature Version 4 Signing
+===========================
+
+Passes all tests in the [Signature Version 4 Test Suite](http://docs.aws.amazon.com/general/latest/gr/signature-v4-test-suite.html)
+
 dynamodb
 ========
 

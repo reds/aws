@@ -14,7 +14,7 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	cfg, err := config.LoadConfig("/tmp/aws.cfg", "dynamodb")
+	cfg, err := config.LoadConfig("awsTestSuite.cfg", "dynamodb")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,6 +49,7 @@ func TestDir(t *testing.T) {
 				continue
 				//				t.Fatal("error parsing", file)
 			}
+			t.Log(file)
 			creq, _ := req2canonical(req)
 			if !compFile2String(t, file+".creq", creq) {
 				t.Logf("%#v", req)
