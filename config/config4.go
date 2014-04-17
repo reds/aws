@@ -26,7 +26,7 @@ type Config4 struct {
 	AccessKeyId string `json:"accesskeyid"`
 }
 
-func LoadConfig(fn, service string) (*Config4, error) {
+func LoadConfig4(fn, service string) (*Config4, error) {
 	f, err := os.Open(fn)
 	if err != nil {
 		return nil, errors.New("LoadConfig: " + err.Error())
