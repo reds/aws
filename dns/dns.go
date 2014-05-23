@@ -8,9 +8,23 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/reds/aws/config"
 	"net/http"
 	"net/url"
 )
+
+type Dns struct {
+	account *config.Account
+	id      *config.Route53ZoneId
+}
+
+func NewFromAccount(cfg *config.Account, domain string) (*Dns, error) {
+	id, err := cfg.Route53ZoneIdConfig(domain)
+	if err != nil {
+		return nil, err
+	}
+	return &Dns{account: cfg, id: id}, nil
+}
 
 func CreateHostedZone(domain, ref, comment string) (*CreateHostedZoneResult, *Error, error) {
 	v := &CreateHostedZoneRequest{Name: domain, CallerReference: ref,
@@ -193,22 +207,26 @@ func ChangeResourceRecordSets(comment, id, sk, zoneid string, changes []Change) 
 		if err != nil {
 			return err
 		}
-		return nil
+		return errors.New(string(body))
 	}
 
 	return nil
 }
 
-func AddDns(domain, ip, id, sk, zoneid string) error {
+func (dns *Dns) SetIpForDomain(domain, ip string) error {
+	return SetIpForDomain(domain, ip, dns.account.AccessKeyId, dns.account.SecretAccessKey, dns.id.Id)
+}
+
+func SetIpForDomain(domain, ip, id, sk, zoneid string) error {
 	cs := make([]Change, 1)
 	cs[0].Action = "CREATE"
 	cs[0].ResourceRecordSet.Name = domain
 	cs[0].ResourceRecordSet.Type = "A"
-	cs[0].ResourceRecordSet.TTL = 60
+	cs[0].ResourceRecordSet.TTL = 300
 	cs[0].ResourceRecordSet.ResourceRecords = make([]ResourceRecord, 1)
 	cs[0].ResourceRecordSet.ResourceRecords[0].Value = ip
 
-	return ChangeResourceRecordSets("AddDns", id, sk, zoneid, cs)
+	return ChangeResourceRecordSets("SetIpForHost", id, sk, zoneid, cs)
 }
 
 type ListResourceRecordSetsResponse struct {
@@ -224,6 +242,10 @@ type ListResourceRecordSetsResponse struct {
 			}
 		}
 	}
+}
+
+func (dns *Dns) GetIpForDomain(domain string) (string, int, error) {
+	return GetIpForDomain(domain, dns.account.AccessKeyId, dns.account.SecretAccessKey, dns.id.Id)
 }
 
 func GetIpForDomain(domain, id, sk, zoneid string) (string, int, error) {
@@ -248,6 +270,10 @@ func GetIpForDomain(domain, id, sk, zoneid string) (string, int, error) {
 		v.ResourceRecordSets.ResourceRecordSet[0].TTL, nil
 }
 
+func (dns *Dns) RemoveDns(domain string) error {
+	return RemoveDns(domain, dns.account.AccessKeyId, dns.account.SecretAccessKey, dns.id.Id)
+}
+
 func RemoveDns(domain, id, sk, zoneid string) error {
 	ip, ttl, err := GetIpForDomain(domain, id, sk, zoneid)
 	if err != nil {
@@ -264,15 +290,23 @@ func RemoveDns(domain, id, sk, zoneid string) error {
 	return ChangeResourceRecordSets("RemoveDns", id, sk, zoneid, cs)
 }
 
-func RemoveIp(domain, ip, id, sk, zoneid string) error {
+func (dns *Dns) RemoveIpForDomain(domain, ip string) error {
+	return RemoveIpForDomain(domain, ip, dns.account.AccessKeyId, dns.account.SecretAccessKey, dns.id.Id)
+}
+
+func RemoveIpForDomain(domain, ip, id, sk, zoneid string) error {
+	ip, ttl, err := GetIpForDomain(domain, id, sk, zoneid)
+	if err != nil {
+		return err
+	}
 	cs := make([]Change, 1)
 	cs[0].Action = "DELETE"
 	cs[0].ResourceRecordSet.Name = domain
 	cs[0].ResourceRecordSet.Type = "A"
-	cs[0].ResourceRecordSet.TTL = 600
+	cs[0].ResourceRecordSet.TTL = ttl
 	cs[0].ResourceRecordSet.ResourceRecords = make([]ResourceRecord, 1)
 	cs[0].ResourceRecordSet.ResourceRecords[0].Value = ip
-
+	fmt.Println(cs[0])
 	return ChangeResourceRecordSets("RemoveIp", id, sk, zoneid, cs)
 }
 

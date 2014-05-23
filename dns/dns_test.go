@@ -1,7 +1,9 @@
 package dns
 
 import (
-	"github.com/reds/config"
+	"github.com/reds/aws/config"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -11,5 +13,9 @@ func TestGetip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log(GetIpForDomain("flashfb.com"))
+	rt53, err := NewFromAccount(acct, "flashfb.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(rt53.GetIpForDomain("flashfb.com"))
 }
